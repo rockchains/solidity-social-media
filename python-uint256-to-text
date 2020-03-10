@@ -1,5 +1,5 @@
 n = int(input('')) #should be int validated, >= 0, <=  2^256 -1
-n = string(bin(n))
+n = str(bin(n))
 output = ''
 i = 0
 tmp = ''
@@ -69,4 +69,5 @@ while i < 255:
         output += "'"
     elif tmp == '11111':
         output += '!'
+    i += 5
 print(output)
