@@ -12,12 +12,18 @@ contract SocialMedia{
         uint32 likes;
         uint32 dislikes;
     }
+    struct Like{
+        uint postId;
+        uint owner;
+        bool exists;
+        bool like;
+    }
     
     User[] public users;
     Post[] public posts;
+    Like[] public likes;
     
-   //map user to posts
-    
+    mapping (uint => uint[]) userToPosts;
     mapping (address => uint) addressToUser;
     mapping (uint => uint) postToUser;
     
@@ -34,29 +40,76 @@ contract SocialMedia{
     function createPost(uint message) public isUser(){
         uint id = posts.push(Post(message, 0x0, 0, 0)) - 1;
         postToUser[id] = addressToUser[msg.sender];
+        userToPosts[addressToUser[msg.sender]].push(id);
     }
     function createComment(uint message, uint id) public isUser(){
         uint cid = posts.push(Post(message, id, 0, 0)) - 1;
         postToUser[cid] = addressToUser[msg.sender];
+        userToPosts[addressToUser[msg.sender]].push(id);
+    }
+    function createLike(uint id) public isUser(){
+        likes.push(Like(id, addressToUser[msg.sender], false, false));
     }
     function likePost(uint id) public isUser(){
-        //prevent dup
-        posts[id].likes += 1;
-        users[postToUser[id]].karma +=1;
+        require(likes[id].postId != 0x0);
+        if(likes[id].exists == true){
+            require(likes[id].like == false);
+            undislikePost(id);
+        }
+        posts[likes[id].postId].likes += 1;
+        users[postToUser[likes[id].postId]].karma += 1;
+        likes[id].like = true;
+        likes[id].exists = true;
     }
     function unlikePost(uint id) public isUser(){
-        //prevent dup
-        posts[id].likes -= 1;
-        users[postToUser[id]].karma -=1;
+        require(likes[id].postId != 0x0);
+        require(likes[id].like = true);
+        posts[likes[id].postId].likes -= 1;
+        users[postToUser[likes[id].postId]].karma -= 1;
+        likes[id].like = false;
+        likes[id].exists = false;
     }
     function dislikePost(uint id) public isUser(){
-        //prevent dup
-        posts[id].likes -= 1;
-        users[postToUser[id]].karma -=1;
+        require(likes[id].postId != 0x0);
+        if(likes[id].exists == true){
+            require(likes[id].like == true);
+            unlikePost(id);
+        }
+        posts[likes[id].postId].dislikes += 1;
+        users[postToUser[likes[id].postId]].karma -= 1;
+        likes[id].like = false;
+        likes[id].exists = true;
     }
     function undislikePost(uint id) public isUser(){
-        //prevent dup
-        posts[id].likes += 1;
-        users[postToUser[id]].karma +=1;
+        require(likes[id].postId != 0x0);
+        require(likes[id].like = false);
+        posts[likes[id].postId].dislikes -= 1;
+        users[postToUser[likes[id].postId]].karma += 1;
+        likes[id].like = false;
+        likes[id].exists = false;
+    }
+    function viewPost(uint id) external view returns(uint){
+        return(posts[id].message);
+    }
+    function viewPostLikes(uint32 id) external view returns(uint){
+        return(posts[id].likes);
+    }
+    function viewPostDislikes(uint32 id) external view returns(uint){
+        return(posts[id].dislikes);
+    }
+    function viewPostOP(uint id) external view returns(uint){
+        return(posts[id].op);
+    }
+    function viewPostOwner(uint id) external view returns(uint){
+        return(postToUser[id]);
+    }
+    function viewUserKarma(uint64 id) external view returns(uint){
+        return(users[id].karma);
+    }
+    function viewUserPostNumber(uint64 id) external view returns(uint){
+        return(userToPosts[id].length);
+    }
+    function viewUserPosts(uint id) external view returns(uint[] memory){
+        return(userToPosts[id]);
     }
 }
