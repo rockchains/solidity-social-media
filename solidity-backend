@@ -1,0 +1,62 @@
+pragma solidity >=0.5.0 <0.6.0;
+import "./ownable.sol";
+
+contract SocialMedia{
+    
+    struct User{
+        uint64 karma;
+    }
+    struct Post{
+        uint message;
+        uint op;
+        uint32 likes;
+        uint32 dislikes;
+    }
+    
+    User[] public users;
+    Post[] public posts;
+    
+   //map user to posts
+    
+    mapping (address => uint) addressToUser;
+    mapping (uint => uint) postToUser;
+    
+    modifier isUser(){
+        require(addressToUser[msg.sender] != 0x0);
+        _;
+    }
+    
+    function createUser() public{
+        require(addressToUser[msg.sender] == 0x0);
+        uint  id = users.push(User(0)) - 1;
+        addressToUser[msg.sender] = id;
+    }
+    function createPost(uint message) public isUser(){
+        uint id = posts.push(Post(message, 0x0, 0, 0)) - 1;
+        postToUser[id] = addressToUser[msg.sender];
+    }
+    function createComment(uint message, uint id) public isUser(){
+        uint cid = posts.push(Post(message, id, 0, 0)) - 1;
+        postToUser[cid] = addressToUser[msg.sender];
+    }
+    function likePost(uint id) public isUser(){
+        //prevent dup
+        posts[id].likes += 1;
+        users[postToUser[id]].karma +=1;
+    }
+    function unlikePost(uint id) public isUser(){
+        //prevent dup
+        posts[id].likes -= 1;
+        users[postToUser[id]].karma -=1;
+    }
+    function dislikePost(uint id) public isUser(){
+        //prevent dup
+        posts[id].likes -= 1;
+        users[postToUser[id]].karma -=1;
+    }
+    function undislikePost(uint id) public isUser(){
+        //prevent dup
+        posts[id].likes += 1;
+        users[postToUser[id]].karma +=1;
+    }
+}
