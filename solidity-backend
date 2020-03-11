@@ -9,6 +9,7 @@ contract SocialMedia{
     struct Post{
         uint message;
         uint op;
+        uint32 subMedia;
         uint32 likes;
         uint32 dislikes;
     }
@@ -22,10 +23,13 @@ contract SocialMedia{
     User[] public users;
     Post[] public posts;
     Like[] public likes;
+    uint[] public subs;
     
     mapping (uint => uint[]) userToPosts;
     mapping (address => uint) addressToUser;
     mapping (uint => uint) postToUser;
+    mapping (uint => uint) postToSub;
+    mapping (uint => uint[]) subToPosts;
     
     modifier isUser(){
         require(addressToUser[msg.sender] != 0x0);
@@ -37,15 +41,24 @@ contract SocialMedia{
         uint  id = users.push(User(0)) - 1;
         addressToUser[msg.sender] = id;
     }
-    function createPost(uint message) public isUser(){
-        uint id = posts.push(Post(message, 0x0, 0, 0)) - 1;
+    function createSub(uint name) public{
+        subs.push(name);
+    }
+    function createPost(uint message, uint32 subMedia) public isUser(){
+        uint id = posts.push(Post(message, 0x0, subMedia, 0, 0)) - 1;
         postToUser[id] = addressToUser[msg.sender];
         userToPosts[addressToUser[msg.sender]].push(id);
+        if(subMedia != 0x0){
+            subToPosts[subMedia].push(id);
+        }
     }
     function createComment(uint message, uint id) public isUser(){
-        uint cid = posts.push(Post(message, id, 0, 0)) - 1;
+        uint cid = posts.push(Post(message, id, posts[id].subMedia, 0, 0)) - 1;
         postToUser[cid] = addressToUser[msg.sender];
         userToPosts[addressToUser[msg.sender]].push(id);
+        if(posts[id].subMedia != 0x0){
+            subToPosts[posts[id].subMedia].push(cid);
+        }
     }
     function createLike(uint id) public isUser(){
         likes.push(Like(id, addressToUser[msg.sender], false, false));
@@ -111,5 +124,11 @@ contract SocialMedia{
     }
     function viewUserPosts(uint id) external view returns(uint[] memory){
         return(userToPosts[id]);
+    }
+    function viewSubName(uint32 id) external view returns(uint){
+        return(subs[id]);
+    }
+    function viewSubPosts(uint32 id) external view returns(uint[] memory){
+        return(subToPosts[id]);
     }
 }
