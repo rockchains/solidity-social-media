@@ -2,7 +2,7 @@ n = str(input('')) #should be text, only lowercase, space, ., ,, ', !
 i = 0;
 output = ''
 while i < 51:
-    if n[i] == ' ':
+    if n[i] == '':
         output += '00000'
     elif n[i] == 'a':
         output += '00001'
@@ -62,10 +62,10 @@ while i < 51:
         output += '11100'
     elif n[i] == '?':
         output += '11101'
-    elif n[i] == "'":
+    elif n[i] == ' ':
         output += '11110'
     elif n[i] == '!':
         output += '11111'
     i += 1
 output += '0'
-print(output)
+print(int(output, 2))
