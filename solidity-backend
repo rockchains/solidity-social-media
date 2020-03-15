@@ -4,6 +4,7 @@ import "./ownable.sol";
 contract SocialMedia{
     
     struct User{
+        uint username;
         uint64 karma;
     }
     struct Post{
@@ -12,6 +13,7 @@ contract SocialMedia{
         uint32 subMedia;
         uint32 likes;
         uint32 dislikes;
+        bool modded;
     }
     struct Like{
         uint postId;
@@ -30,22 +32,38 @@ contract SocialMedia{
     mapping (uint => uint) postToUser;
     mapping (uint => uint) postToSub;
     mapping (uint => uint[]) subToPosts;
+    mapping (uint => uint) subToOwner;
     
     modifier isUser(){
         require(addressToUser[msg.sender] != 0x0);
         _;
     }
     
-    function createUser() public{
+    function createUser(uint username) public{
         require(addressToUser[msg.sender] == 0x0);
-        uint  id = users.push(User(0)) - 1;
+        uint  id = users.push(User(username, 0)) - 1;
         addressToUser[msg.sender] = id;
     }
-    function createSub(uint name) public{
+    function createSub(uint name, bool mod) public{
         subs.push(name);
+        if(mod == true){
+            subToOwner[subs.length - 1] = addressToUser[msg.sender];
+        }
+    }
+    function changeSubOwner(uint id, uint user) public{
+        require(addressToUser[msg.sender] == subToOwner[id]);
+        subToOwner[id] = user;
+    }
+    function modPost(uint id) public{
+        require(addressToUser[msg.sender] == subToOwner[postToSub[id]]);
+        posts[id].modded = true;
+    }
+    function unmodPost(uint id) public{
+        require(addressToUser[msg.sender] == subToOwner[postToSub[id]]);
+        posts[id].modded = false;
     }
     function createPost(uint message, uint32 subMedia) public isUser(){
-        uint id = posts.push(Post(message, 0x0, subMedia, 0, 0)) - 1;
+        uint id = posts.push(Post(message, 0x0, subMedia, 0, 0, false)) - 1;
         postToUser[id] = addressToUser[msg.sender];
         userToPosts[addressToUser[msg.sender]].push(id);
         if(subMedia != 0x0){
@@ -53,7 +71,7 @@ contract SocialMedia{
         }
     }
     function createComment(uint message, uint id) public isUser(){
-        uint cid = posts.push(Post(message, id, posts[id].subMedia, 0, 0)) - 1;
+        uint cid = posts.push(Post(message, id, posts[id].subMedia, 0, 0, false)) - 1;
         postToUser[cid] = addressToUser[msg.sender];
         userToPosts[addressToUser[msg.sender]].push(id);
         if(posts[id].subMedia != 0x0){
@@ -130,5 +148,17 @@ contract SocialMedia{
     }
     function viewSubPosts(uint32 id) external view returns(uint[] memory){
         return(subToPosts[id]);
+    }
+    function viewSubOwner(uint id) external view returns(uint){
+        return(subToOwner[id]);
+    }
+    function viewUsername(uint id) external view returns(uint){
+        return(users[id].username);
+    }
+    function viewPostSub(uint id) external view returns(uint){
+        return(postToSub[id]);
+    }
+    function viewPostMod(uint id)external view returns(bool){
+        return(posts[id].modded);
     }
 }
